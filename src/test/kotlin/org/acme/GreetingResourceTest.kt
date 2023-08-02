@@ -1,5 +1,8 @@
 package org.acme
 
+import io.mockk.every
+import io.quarkiverse.test.junit.mockk.InjectMock
+
 import io.quarkus.test.junit.QuarkusTest
 import io.restassured.module.kotlin.extensions.Extract
 import io.restassured.module.kotlin.extensions.Then
@@ -9,6 +12,9 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient
 import software.amazon.awssdk.services.dynamodb.model.*
+import java.time.Clock
+import java.time.OffsetDateTime
+import java.time.ZoneOffset
 
 @QuarkusTest
 class GreetingResourceTest {
@@ -16,8 +22,16 @@ class GreetingResourceTest {
     @Inject
     lateinit var client: DynamoDbClient
 
+    @InjectMock
+    private lateinit var clock: Clock
+
+    private val timestamp: OffsetDateTime = OffsetDateTime.of(2024, 11, 9, 0, 0, 0, 0, ZoneOffset.UTC)
+
     @BeforeEach
     fun setUp() {
+        every { clock.zone } returns timestamp.offset
+        every { clock.instant() } returns timestamp.toInstant()
+
         client.createTable(
                 CreateTableRequest.builder()
                         .attributeDefinitions(
